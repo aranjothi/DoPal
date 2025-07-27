@@ -180,13 +180,13 @@ while running:
                     if i == 1:
                         yoffset = 50 - scrollY
 
-                    check_rect = pygame.Rect(350, yoffset + 20, 20, 20)
+                    check_rect = pygame.Rect(340, yoffset + 15, 30, 30)
                     if check_rect.collidepoint(event.pos):
                         complete_task_card(idx)
                         check_clicked = True
                         break
 
-                    trash_rect = pygame.Rect(380, yoffset + 20, 20, 20)
+                    trash_rect = pygame.Rect(375, yoffset + 15, 30, 30)
                     if trash_rect.collidepoint(event.pos):
                         delete_task_card(idx)
                         trash_clicked = True
@@ -295,8 +295,10 @@ while running:
         anim = card_animations[card_id]
         target_y = 50 + ((card_id - 1) * 140) - scrollY
         
+        dynamic_speed = animation_speed / len(taskcards)
+        
         if abs(anim['y_offset'] - target_y) > 1:
-            anim['y_offset'] += (target_y - anim['y_offset']) * animation_speed
+            anim['y_offset'] += (target_y - anim['y_offset']) * dynamic_speed
         else:
             anim['y_offset'] = target_y
             
@@ -370,9 +372,10 @@ while running:
                     )
             color = (0, 0, 0)
 
+        # task title
         text_surface = subheaderfont.render(task_title, True, color)
         text_surface.set_alpha(alpha)
-        text_rect = text_surface.get_rect(topleft=(40, yoffset + 20))
+        text_rect = text_surface.get_rect(topleft=(45, yoffset + 22.5))
         
         if is_selected:
             textbox_bg = pygame.Surface((285, 35), pygame.SRCALPHA)
@@ -383,11 +386,11 @@ while running:
         screen.blit(text_surface, text_rect)
 
         trash_x = 380  
-        trash_y = yoffset + 20  
+        trash_y = yoffset + 21  
         screen.blit(trash_icon, (trash_x, trash_y))
 
         check_x = 345
-        check_y = yoffset + 21
+        check_y = yoffset + 22
         screen.blit(check_icon, (check_x, check_y))
 
     screen.set_clip(None)
