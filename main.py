@@ -62,6 +62,10 @@ selected_task_index = None
 card_animations = {}  # Store animation data for each card
 animation_speed = 0.15  # Animation speed factor
 
+# Hover effects
+hovered_card = None
+hovered_newtask = False
+
 # Functions
 def createnewcard():
     global numcards
@@ -114,9 +118,26 @@ while running:
         elif event.type == pygame.MOUSEWHEEL:
             scrollY += event.y * -30
 
-            # clamp scrolling
-            maxscroll = max(0, (len(taskcards) - 4) * 140)
+            # clamp scrolling - create a scrollable viewport
+            scroll_area_start = 50  # Cards start here
+            scroll_area_height = 400  # Available height for scrolling (leaves space for button)
+            maxscroll = max(0, (len(taskcards) * 140) - scroll_area_height)
             scrollY = max(0, min(scrollY, maxscroll))
+
+    # Update hover states
+    mouse_pos = pygame.mouse.get_pos()
+    hovered_newtask = newtask.collidepoint(mouse_pos)
+    
+    hovered_card = None
+    for idx, i in enumerate(taskcards):
+        yoffset = 50 + ((i - 1) * 140) - scrollY  # Cards start at Y=50
+        if i == 1:
+            yoffset = 50 - scrollY
+
+        card_rect = pygame.Rect(20, yoffset, 400, 125)
+        if card_rect.collidepoint(mouse_pos):
+            hovered_card = i
+            break
 
     # container for tasks, etc
     #pygame.draw.rect(screen, brown, (475, 0, 325, 600), width=0, border_radius=0)
@@ -129,7 +150,7 @@ while running:
     # Update animations
     for card_id in card_animations:
         anim = card_animations[card_id]
-        target_y = 50 + ((card_id - 1) * 140) - scrollY
+        target_y = 50 + ((card_id - 1) * 140) - scrollY  # Cards start at Y=50
         
         # Animate position
         if abs(anim['y_offset'] - target_y) > 1:
@@ -144,30 +165,38 @@ while running:
             anim['alpha'] = 255
 
     # create task button
-    pygame.draw.rect(screen, darkorange, newtask, width=0, border_radius=6)
+    button_color = orange if hovered_newtask else darkorange
+    pygame.draw.rect(screen, button_color, newtask, width=0, border_radius=6)
     pygame.draw.rect(screen, black, newtask, width=2, border_radius=6)
     text_surface = bodyfont.render("+", True, (0, 0, 0))
     text_rect = text_surface.get_rect(center = newtask.center)
 
     screen.blit(text_surface, text_rect)
 
+    # Set clipping rectangle for scroll viewport
+    scroll_clip = pygame.Rect(0, 50, 475, 400)  # Clip to scroll area
+    screen.set_clip(scroll_clip)
+
     for i in taskcards:
-        # Use animation data if available, otherwise use default positioning
+        # animations if available
         if i in card_animations:
             yoffset = card_animations[i]['y_offset']
             alpha = card_animations[i]['alpha']
         else:
-            yoffset = 50 + ((i - 1) * 140) - scrollY
+            yoffset = 50 + ((i - 1) * 140) - scrollY  # Cards start at Y=50
             if i == 1:
                 yoffset = 50 - scrollY
             alpha = 255
 
-        # no drawing if card off screen
-        if yoffset + 140 < 0 or yoffset > height:
-            continue
-
         # Create card surface with transparency
         card_surface = pygame.Surface((400, 125), pygame.SRCALPHA)
+        
+        # Add shadow effect for hovered cards
+        if i == hovered_card:
+            shadow_surface = pygame.Surface((400, 125), pygame.SRCALPHA)
+            shadow_color = (*black, 50)  # Semi-transparent shadow
+            pygame.draw.rect(shadow_surface, shadow_color, (4, 4, 400, 125), width=0, border_radius=12)
+            screen.blit(shadow_surface, (16, yoffset - 4))
         
         # Draw card background with alpha
         card_color = (*darkorange, alpha)
@@ -187,7 +216,7 @@ while running:
                 task_title = "|"  
             else:
                 task_title = "Enter Task Title..."  
-            color = (120, 80, 40)  # Darker, more saturated brown for placeholder
+            color = (120, 80, 40)  # lighter brown for placeholder
         else:
             if is_selected:
                 task_title += "|"  
@@ -199,15 +228,16 @@ while running:
         text_rect = text_surface.get_rect(topleft=(40, yoffset + 20))
         screen.blit(text_surface, text_rect)
 
-
+    # Remove clipping rectangle
+    screen.set_clip(None)
 
     # scroll bar
     total_height = len(taskcards) * 140
-    view_height = 4 * 140
+    view_height = 400  # Match the scroll viewport height
     scrollbar_x = 440
-    scrollbar_y = 50
+    scrollbar_y = 50  # Start at same Y as cards
     scrollbar_width = 8
-    scrollbar_height = 500
+    scrollbar_height = 400  # Match the scroll viewport height
 
     if total_height > view_height:
         pygame.draw.rect(screen, scrollbg, (scrollbar_x, scrollbar_y, scrollbar_width, scrollbar_height))
