@@ -55,9 +55,12 @@ numcards = 0
 scrollY = 0
 
 taskcards = []
-
 task_texts = []
 selected_task_index = None
+
+# Animation variables
+card_animations = {}  # Store animation data for each card
+animation_speed = 0.15  # Animation speed factor
 
 # Functions
 def createnewcard():
@@ -65,6 +68,13 @@ def createnewcard():
     numcards += 1
     taskcards.append(numcards)
     task_texts.append("Enter Task Title...")
+    
+    # Initialize animation for new card
+    card_animations[numcards] = {
+        'y_offset': -125,  # Start above screen
+        'alpha': 0,        # Start fully transparent
+        'target_y': 50 + ((numcards - 1) * 140) - scrollY
+    }
 
     return
 
@@ -98,6 +108,8 @@ while running:
                 elif event.key == pygame.K_RETURN:
                     selected_task_index = None
                 else:
+                    if task_texts[selected_task_index] == "Enter Task Title...":
+                        task_texts[selected_task_index] = ""
                     task_texts[selected_task_index] += event.unicode
         elif event.type == pygame.MOUSEWHEEL:
             scrollY += event.y * -30
@@ -114,6 +126,22 @@ while running:
     # border between room and taskboard
     pygame.draw.rect(screen, brown, (475, 0, 3, 600), width=0, border_radius=0)
 
+    # Update animations
+    for card_id in card_animations:
+        anim = card_animations[card_id]
+        target_y = 50 + ((card_id - 1) * 140) - scrollY
+        
+        # Animate position
+        if abs(anim['y_offset'] - target_y) > 1:
+            anim['y_offset'] += (target_y - anim['y_offset']) * animation_speed
+        else:
+            anim['y_offset'] = target_y
+            
+        # Animate alpha (fade in)
+        if anim['alpha'] < 255:
+            anim['alpha'] += 15
+        else:
+            anim['alpha'] = 255
 
     # create task button
     pygame.draw.rect(screen, darkorange, newtask, width=0, border_radius=6)
@@ -124,26 +152,50 @@ while running:
     screen.blit(text_surface, text_rect)
 
     for i in taskcards:
-        yoffset = 50 + ((i - 1) * 140) - scrollY
-        if i == 1:
-            yoffset = 50 - scrollY
+        # Use animation data if available, otherwise use default positioning
+        if i in card_animations:
+            yoffset = card_animations[i]['y_offset']
+            alpha = card_animations[i]['alpha']
+        else:
+            yoffset = 50 + ((i - 1) * 140) - scrollY
+            if i == 1:
+                yoffset = 50 - scrollY
+            alpha = 255
 
         # no drawing if card off screen
         if yoffset + 140 < 0 or yoffset > height:
             continue
 
-        pygame.draw.rect(screen, darkorange, (20, yoffset, 400, 125), width=0, border_radius=12)
-        pygame.draw.rect(screen, black, (20, yoffset, 400, 125), width=3, border_radius=12)
+        # Create card surface with transparency
+        card_surface = pygame.Surface((400, 125), pygame.SRCALPHA)
+        
+        # Draw card background with alpha
+        card_color = (*darkorange, alpha)
+        pygame.draw.rect(card_surface, card_color, (0, 0, 400, 125), width=0, border_radius=12)
+        pygame.draw.rect(card_surface, (*black, alpha), (0, 0, 400, 125), width=3, border_radius=12)
+        
+        # Blit card to screen
+        screen.blit(card_surface, (20, yoffset))
 
         idx = i - 1
         task_title = task_texts[idx]
         is_selected = (selected_task_index == idx)
 
-        color = (0, 0, 0)
-        if is_selected:
-            task_title += "|"  # cursor indicator
+        # placeholder text
+        if not task_title or task_title == "Enter Task Title...":
+            if is_selected:
+                task_title = "|"  
+            else:
+                task_title = "Enter Task Title..."  
+            color = (120, 80, 40)  # Darker, more saturated brown for placeholder
+        else:
+            if is_selected:
+                task_title += "|"  
+            color = (0, 0, 0)
 
+        # Render text with alpha
         text_surface = subheaderfont.render(task_title, True, color)
+        text_surface.set_alpha(alpha)
         text_rect = text_surface.get_rect(topleft=(40, yoffset + 20))
         screen.blit(text_surface, text_rect)
 
