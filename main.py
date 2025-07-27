@@ -20,6 +20,8 @@ taskboardbackground = pygame.image.load("taskbackground.png")
 taskboardbackground = pygame.transform.scale(taskboardbackground, (800,800))
 crop_rect = pygame.Rect(0, 0, 475, 800)
 taskboardcrop = taskboardbackground.subsurface(crop_rect)
+defaultroom = pygame.image.load("defaultroom.png")
+defaultroom = pygame.transform.scale(defaultroom, (400,600))
 
 
 # Color Palette
@@ -54,11 +56,15 @@ scrollY = 0
 
 taskcards = []
 
+task_texts = []
+selected_task_index = None
+
 # Functions
 def createnewcard():
     global numcards
     numcards += 1
     taskcards.append(numcards)
+    task_texts.append("Enter Task Title...")
 
     return
 
@@ -73,6 +79,26 @@ while running:
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if newtask.collidepoint(event.pos):
                 createnewcard()
+            else:
+                selected_task_index = None  
+
+                for idx, i in enumerate(taskcards):
+                    yoffset = 50 + ((i - 1) * 140) - scrollY
+                    if i == 1:
+                        yoffset = 50 - scrollY
+
+                    card_rect = pygame.Rect(20, yoffset, 400, 125)
+                    if card_rect.collidepoint(event.pos):
+                        selected_task_index = idx
+                        break
+        elif event.type == pygame.KEYDOWN:
+            if selected_task_index is not None:
+                if event.key == pygame.K_BACKSPACE:
+                    task_texts[selected_task_index] = task_texts[selected_task_index][:-1]
+                elif event.key == pygame.K_RETURN:
+                    selected_task_index = None
+                else:
+                    task_texts[selected_task_index] += event.unicode
         elif event.type == pygame.MOUSEWHEEL:
             scrollY += event.y * -30
 
@@ -81,9 +107,12 @@ while running:
             scrollY = max(0, min(scrollY, maxscroll))
 
     # container for tasks, etc
-    #pygame.draw.rect(screen, brown, (-20, -10, 525, 750), width=0, border_radius=12)
-
+    #pygame.draw.rect(screen, brown, (475, 0, 325, 600), width=0, border_radius=0)
+    screen.blit(defaultroom, (475, 0))
     screen.blit(taskboardcrop, (0, 0)) 
+
+    # border between room and taskboard
+    pygame.draw.rect(screen, brown, (475, 0, 3, 600), width=0, border_radius=0)
 
 
     # create task button
@@ -106,9 +135,18 @@ while running:
         pygame.draw.rect(screen, darkorange, (20, yoffset, 400, 125), width=0, border_radius=12)
         pygame.draw.rect(screen, black, (20, yoffset, 400, 125), width=3, border_radius=12)
 
-        text_surface = subheaderfont.render("Task", True, (0, 0, 0))
-        text_rect = text_surface.get_rect(center=(60, yoffset + 30))
+        idx = i - 1
+        task_title = task_texts[idx]
+        is_selected = (selected_task_index == idx)
+
+        color = (0, 0, 0)
+        if is_selected:
+            task_title += "|"  # cursor indicator
+
+        text_surface = subheaderfont.render(task_title, True, color)
+        text_rect = text_surface.get_rect(topleft=(40, yoffset + 20))
         screen.blit(text_surface, text_rect)
+
 
 
     # scroll bar
