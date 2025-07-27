@@ -22,6 +22,8 @@ crop_rect = pygame.Rect(0, 0, 475, 800)
 taskboardcrop = taskboardbackground.subsurface(crop_rect)
 defaultroom = pygame.image.load("defaultroom.png")
 defaultroom = pygame.transform.scale(defaultroom, (400,600))
+trash_icon = pygame.image.load("defaulttrash.png")
+trash_icon = pygame.transform.scale(trash_icon, (20, 25))
 
 
 # Color Palette
@@ -82,6 +84,31 @@ def createnewcard():
 
     return
 
+def delete_task_card(card_index):
+    global numcards, taskcards, task_texts
+    
+    if 0 <= card_index < len(taskcards):
+        # remove the card and text
+        del taskcards[card_index]
+        del task_texts[card_index]
+        
+        # update card IDs to be sequential
+        taskcards = list(range(1, len(taskcards) + 1))
+        
+        # clear any animations for deleted cards
+        for card_id in list(card_animations.keys()):
+            if card_id > len(taskcards):
+                del card_animations[card_id]
+        
+        numcards = len(taskcards)
+        
+        # deselect if the deleted card was selected
+        global selected_task_index
+        if selected_task_index == card_index:
+            selected_task_index = None
+        elif selected_task_index is not None and selected_task_index > card_index:
+            selected_task_index -= 1
+
 # Game Loop
 while running:
 
@@ -94,17 +121,33 @@ while running:
             if newtask.collidepoint(event.pos):
                 createnewcard()
             else:
-                selected_task_index = None  
-
+                # Check for trash button clicks first
+                trash_clicked = False
                 for idx, i in enumerate(taskcards):
                     yoffset = 50 + ((i - 1) * 140) - scrollY
                     if i == 1:
                         yoffset = 50 - scrollY
 
-                    card_rect = pygame.Rect(20, yoffset, 400, 125)
-                    if card_rect.collidepoint(event.pos):
-                        selected_task_index = idx
+                    # Trash button position (top right of card)
+                    trash_rect = pygame.Rect(380, yoffset + 10, 20, 20)
+                    if trash_rect.collidepoint(event.pos):
+                        delete_task_card(idx)
+                        trash_clicked = True
                         break
+                
+                # Only check for card selection if trash wasn't clicked
+                if not trash_clicked:
+                    selected_task_index = None  
+
+                    for idx, i in enumerate(taskcards):
+                        yoffset = 50 + ((i - 1) * 140) - scrollY
+                        if i == 1:
+                            yoffset = 50 - scrollY
+
+                        card_rect = pygame.Rect(20, yoffset, 400, 125)
+                        if card_rect.collidepoint(event.pos):
+                            selected_task_index = idx
+                            break
         elif event.type == pygame.KEYDOWN:
             if selected_task_index is not None:
                 if event.key == pygame.K_BACKSPACE:
@@ -205,6 +248,11 @@ while running:
         
         # Blit card to screen
         screen.blit(card_surface, (20, yoffset))
+
+        # Add trash icon in top right corner
+        trash_x = 380  # 20px from right edge of card (400 - 20)
+        trash_y = yoffset + 15  # 10px from top of card
+        screen.blit(trash_icon, (trash_x, trash_y))
 
         idx = i - 1
         task_title = task_texts[idx]
