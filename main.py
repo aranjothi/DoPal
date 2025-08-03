@@ -13,9 +13,9 @@ screen = pygame.display.set_mode((width, height))
 pygame.display.set_caption("DoPal")
 
 # Images
-# taskboard = pygame.image.load("taskboard.png")
-# taskboard = pygame.transform.scale(taskboard, (250,250))
-# taskboard = pygame.transform.rotate(taskboard, 5)
+board = pygame.image.load("board.png")
+board = pygame.transform.scale(board, (250,175))
+board = pygame.transform.rotate(board, 5)
 taskboardbackground = pygame.image.load("taskbackground.png")
 taskboardbackground = pygame.transform.scale(taskboardbackground, (800,800))
 crop_rect = pygame.Rect(0, 0, 475, 800)
@@ -28,6 +28,8 @@ defaulttreat = pygame.image.load("defaulttreat.png")
 defaulttreat = pygame.transform.scale(defaulttreat, (60, 60))
 check_icon = pygame.image.load("defaultcheck.png")
 check_icon = pygame.transform.scale(check_icon, (23.5, 25))
+dog = pygame.image.load("defaultdog.png")
+dog = pygame.transform.scale(dog, (200, 300))
 
 
 # Color Palette
@@ -394,6 +396,10 @@ while running:
         screen.blit(check_icon, (check_x, check_y))
 
     screen.set_clip(None)
+
+    # dog stuff
+    screen.blit(dog, (550, 300))
+    screen.blit(board, (465, -10))
 
     total_height = len(taskcards) * 140
     view_height = 400
