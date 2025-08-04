@@ -17,6 +17,8 @@ pygame.display.set_caption("DoPal")
 # images
 board = pygame.image.load("board.png")
 board = pygame.transform.smoothscale(board, (275,200))
+button = pygame.image.load("button.png")
+button = pygame.transform.smoothscale(button, (250,175))
 heart = pygame.image.load("healthheart.png")
 heart = pygame.transform.smoothscale(heart, (45,32.5))
 collar = pygame.image.load("collar.png")
@@ -47,6 +49,7 @@ black = (0, 0, 0)
 brown = (94, 59, 22)
 scrollbg = (200, 115, 50)
 scrollmain = (94, 59, 22)
+taskcard_color = (212, 139, 59)  # #d48b3b
 
 
 # fonts
@@ -285,7 +288,7 @@ while running:
             if newtask.collidepoint(event.pos) and new_task_cooldown <= 0:
                 createnewcard()
             else:
-                # Check if clicking on treat
+                # check if clicking on treat
                 treat_rect = pygame.Rect(735, 10, 60, 60)
                 if treat_rect.collidepoint(event.pos) and numtreats > 0:
                     dragging_treat = True
@@ -295,13 +298,13 @@ while running:
                     dragged_treat_alpha = 255
                     dragged_treat_scale = 1.0
                 else:
-                    # Check if clicking on name box
+                    # check if clicking on name box
                     name_box_rect = pygame.Rect(collar_x + 45, collar_y, 100, 25)
                     if name_box_rect.collidepoint(event.pos):
                         selected_name_box = True
                         name_cursor_position = len(dog_name)
-                        selected_textbox_index = None  # Deselect task textbox
-                        selected_description_index = None  # Deselect description textbox
+                        selected_textbox_index = None  # deselect task textbox
+                        selected_description_index = None  # deselect description textbox
                         cursor_position = 0
                     else:
                         selected_name_box = False
@@ -332,8 +335,8 @@ while running:
                         if textbox_rect.collidepoint(event.pos):
                             selected_task_index = idx
                             selected_textbox_index = idx
-                            selected_description_index = None  # Deselect description textbox
-                            selected_name_box = False  # Deselect name box
+                            selected_description_index = None  # deselect description textbox
+                            selected_name_box = False  # deselect name box
                             cursor_position = len(task_texts[idx])
                             textbox_clicked = True
                             break
@@ -342,8 +345,8 @@ while running:
                         if description_rect.collidepoint(event.pos):
                             selected_task_index = idx
                             selected_description_index = idx
-                            selected_textbox_index = None  # Deselect title textbox
-                            selected_name_box = False  # Deselect name box
+                            selected_textbox_index = None  # deselect title textbox
+                            selected_name_box = False  # deselect name box
                             cursor_position = len(task_descriptions[idx])
                             textbox_clicked = True
                             break
@@ -471,6 +474,7 @@ while running:
             maxscroll = max(0, (len(taskcards) * 140) - scroll_area_height)
             scrollY = max(0, min(scrollY, maxscroll))
 
+    # only check mouse position for hover effects, not for selection
     mouse_pos = pygame.mouse.get_pos()
     hovered_newtask = newtask.collidepoint(mouse_pos)
     
@@ -582,7 +586,7 @@ while running:
         else:
             anim['alpha'] = 255
 
-    button_color = orange if hovered_newtask else darkorange
+    button_color = taskcard_color if hovered_newtask else taskcard_color
     pygame.draw.rect(screen, button_color, newtask, width=0, border_radius=6)
     pygame.draw.rect(screen, black, newtask, width=2, border_radius=6)
     
@@ -626,7 +630,7 @@ while running:
             pygame.draw.rect(shadow_surface, shadow_color, (4, 4, 400, 125), width=0, border_radius=12)
             screen.blit(shadow_surface, (16, yoffset - 4))
         
-        card_color = (*darkorange, alpha)
+        card_color = (*taskcard_color, alpha)
         pygame.draw.rect(card_surface, card_color, (0, 0, 400, 125), width=0, border_radius=12)
         pygame.draw.rect(card_surface, (*black, alpha), (0, 0, 400, 125), width=3, border_radius=12)
         
@@ -732,6 +736,23 @@ while running:
         thumb_y = scrollbar_y + scroll_ratio * (scrollbar_height - thumb_height)
         pygame.draw.rect(screen, scrollmain, (scrollbar_x, thumb_y, scrollbar_width, thumb_height), border_radius=3)
     
+    # two buttons side by side below the scrollbox
+    button1_x = 0
+    button1_y = 440  # below the scroll area
+    button2_x = 220
+    button2_y = 440
+    screen.blit(button, (button1_x, button1_y))
+    screen.blit(button, (button2_x, button2_y))
+    
+    # shop text on button1
+    shop_text = subheaderfont.render("Store", True, black)
+    shop_text_rect = shop_text.get_rect(center=(button1_x + 125, button1_y + 87.5))  # center of 250x175 button
+    screen.blit(shop_text, shop_text_rect)
+    
+    # inventory text on button2
+    inventory_text = subheaderfont.render("Customize", True, black)
+    inventory_text_rect = inventory_text.get_rect(center=(button2_x + 125, button2_y + 87.5))  # center of 250x175 button
+    screen.blit(inventory_text, inventory_text_rect)
 
     # render health bar and heart with z-index 9999
     health_bar_x = 555
