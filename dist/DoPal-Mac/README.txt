@@ -14,3 +14,7 @@ If you get a "damaged" error:
 2. Navigate to the DoPal-Mac folder
 3. Run: xattr -cr DoPal
 4. Try running again: ./DoPal
+
+The app will create a dopal.db file to save your progress.
+
+Enjoy your virtual companion! 🐕
