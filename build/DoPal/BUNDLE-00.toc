@@ -1,0 +1,1 @@
+([('DoPal', '/Users/aranjothi/dopal/dist/DoPal', 'EXECUTABLE')],)

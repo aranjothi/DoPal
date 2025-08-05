@@ -2,6 +2,8 @@ import pygame
 import sys
 import time
 import math
+import sqlite3
+import os
 
 #print(pygame.font.get_fonts())
 
@@ -251,6 +253,8 @@ def complete_task_card(card_index):
             cursor_position = 0
         elif selected_description_index is not None and selected_description_index > card_index:
             selected_description_index -= 1
+        
+        save_game_data()  # auto-save when completing tasks
 
 def clip_text_to_width(text, font, max_width):
     if font.size(text)[0] <= max_width:
@@ -270,19 +274,122 @@ def gain_experience(amount):
     
     player_exp += amount
     
-    # Check for level up
+    # check for level up
     while player_exp >= exp_to_next_level:
         player_exp -= exp_to_next_level
         player_level += 1
-        exp_to_next_level *= 2  # Double the experience required for next level
+        exp_to_next_level *= 2  # double the experience required for next level
+
+def save_game_data():
+    try:
+        conn = sqlite3.connect('dopal.db')
+        cursor = conn.cursor()
+        
+        # clear existing data
+        cursor.execute('DELETE FROM game_state')
+        cursor.execute('DELETE FROM tasks')
+        
+        # save game state
+        cursor.execute('''
+            INSERT INTO game_state VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (1, numcards, numtreats, dog_health, player_exp, 
+              player_level, exp_to_next_level, dog_name, scrollY))
+        
+        # save tasks
+        for i, (task_id, title, desc) in enumerate(zip(taskcards, task_texts, task_descriptions)):
+            cursor.execute('''
+                INSERT INTO tasks VALUES (?, ?, ?, ?)
+            ''', (i+1, task_id, title, desc))
+        
+        conn.commit()
+        conn.close()
+        print("game data saved successfully!")
+    except Exception as e:
+        print(f"error saving game data: {e}")
+
+def create_database():
+    try:
+        conn = sqlite3.connect('dopal.db')
+        cursor = conn.cursor()
+        
+        # create game_state table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS game_state (
+                id INTEGER PRIMARY KEY,
+                numcards INTEGER,
+                numtreats INTEGER,
+                dog_health INTEGER,
+                player_exp INTEGER,
+                player_level INTEGER,
+                exp_to_next_level INTEGER,
+                dog_name TEXT,
+                scroll_y INTEGER
+            )
+        ''')
+        
+        # create tasks table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS tasks (
+                id INTEGER PRIMARY KEY,
+                task_id INTEGER,
+                title TEXT,
+                description TEXT
+            )
+        ''')
+        
+        conn.commit()
+        conn.close()
+        print("database created successfully!")
+    except Exception as e:
+        print(f"error creating database: {e}")
+
+def load_game_data():
+    global taskcards, task_texts, task_descriptions, numcards, numtreats
+    global dog_health, player_exp, player_level, exp_to_next_level, dog_name, scrollY
+    
+    try:
+        conn = sqlite3.connect('dopal.db')
+        cursor = conn.cursor()
+        
+        # load game state
+        cursor.execute('SELECT * FROM game_state WHERE id = 1')
+        row = cursor.fetchone()
+        if row:
+            numcards = row[1]
+            numtreats = row[2]
+            dog_health = row[3]
+            player_exp = row[4]
+            player_level = row[5]
+            exp_to_next_level = row[6]
+            dog_name = row[7]
+            scrollY = row[8]
+        
+        # load tasks
+        cursor.execute('SELECT task_id, title, description FROM tasks ORDER BY id')
+        tasks = cursor.fetchall()
+        
+        taskcards = [task[0] for task in tasks]
+        task_texts = [task[1] for task in tasks]
+        task_descriptions = [task[2] for task in tasks]
+        
+        conn.close()
+        print("game data loaded successfully!")
+        
+    except Exception as e:
+        print(f"error loading game data: {e}")
+        # start with default values if loading fails
 
 # Game Loop
+create_database() 
+load_game_data() 
+
 while running:
 
     screen.fill(orange)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
+            save_game_data()  # save before closing
             running = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if newtask.collidepoint(event.pos) and new_task_cooldown <= 0:
@@ -454,14 +561,16 @@ while running:
                 # Check if treat is dropped on dog
                 dog_rect = pygame.Rect(510, 340, 250, 250)  # Approximate dog area
                 if dog_rect.collidepoint(event.pos):
-                    # Feed the dog
+                    # feed the dog
                     dog_health = min(dog_max_health, dog_health + 20)
                     numtreats -= 1
                     
-                    # Gain random experience (30-60)
+                    # gain random experience (30-60)
                     import random
                     exp_gained = random.randint(30, 60)
                     gain_experience(exp_gained)
+                    
+                    save_game_data()  # auto-save when feeding dog
                 else:
                     # Start vanishing animation
                     treat_vanishing = True
@@ -537,7 +646,7 @@ while running:
 
     # update health bar
     current_time = time.time()
-    if current_time - last_health_update >= 5.0:  # every 5 seconds
+    if current_time - last_health_update >= 180.0:  # every 3 minutes
         dog_health = max(0, dog_health - health_decrease_rate)
         last_health_update = current_time
 
