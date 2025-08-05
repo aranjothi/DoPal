@@ -1,9 +1,11 @@
+import os
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+
 import pygame
 import sys
 import time
 import math
 import sqlite3
-import os
 
 #print(pygame.font.get_fonts())
 
