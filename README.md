@@ -1,6 +1,6 @@
 # DoPal
 
-Installation Steps:
+## Installation Steps:
 1. Navigate to releases
 2. Download DoPal.zip
 3. Extract the zip file

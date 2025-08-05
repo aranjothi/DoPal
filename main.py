@@ -305,9 +305,10 @@ def save_game_data():
         
         conn.commit()
         conn.close()
-        print("game data saved successfully!")
+        # print("game data saved successfully!")
     except Exception as e:
-        print(f"error saving game data: {e}")
+        # print(f"error saving game data: {e}")
+        pass
 
 def create_database():
     try:
@@ -341,9 +342,10 @@ def create_database():
         
         conn.commit()
         conn.close()
-        print("database created successfully!")
+        # print("database created successfully!")
     except Exception as e:
-        print(f"error creating database: {e}")
+        # print(f"error creating database: {e}")
+        pass
 
 def load_game_data():
     global taskcards, task_texts, task_descriptions, numcards, numtreats
@@ -375,11 +377,12 @@ def load_game_data():
         task_descriptions = [task[2] for task in tasks]
         
         conn.close()
-        print("game data loaded successfully!")
+        # print("game data loaded successfully!")
         
     except Exception as e:
-        print(f"error loading game data: {e}")
+        # print(f"error loading game data: {e}")
         # start with default values if loading fails
+        pass
 
 # Game Loop
 create_database() 
